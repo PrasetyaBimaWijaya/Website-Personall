@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAFAM AI</title>
+    <link rel="stylesheet" href="dafamai.css">
+</head>
+<body>
+    <h1>DAFAM AI</h1>
+
+    <!-- Chatbox -->
+    <div id="chat-container">
+        <div id="chat-box"></div>
+    </div>
+
+    <!-- Input -->
+    <div id="input-container">
+        <input type="text" id="userQuestion" placeholder="Ketik pesan..." onkeypress="handleKeyPress(event)">
+        <button onclick="askAI()">Kirim</button>
+        <button onclick="openCamera()">Kamera</button>
+        <button onclick="goHome()" id="homeButton">Beranda</button>
+    </div>
+
+    <!-- Video Stream -->
+    <video id="video" autoplay style="display:none;"></video>
+    
+    <script>
+        const API_KEY = "AIzaSyA1gq7T4RZWDcyo3wtCB7CfVgZ8QfZb5dQ"; // Ganti dengan API Key dari Google AI
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                askAI();
+            }
+        }
+
+        async function askAI() {
+            let question = document.getElementById("userQuestion").value;
+            let chatBox = document.getElementById("chat-box");
+
+            if (question.trim() === "") return;
+
+            // Tambahkan pesan pengguna ke chat
+            let userMessage = document.createElement("div");
+            userMessage.classList.add("chat", "user");
+            userMessage.textContent = question;
+            chatBox.appendChild(userMessage);
+            document.getElementById("userQuestion").value = "";
+
+            // Tambahkan pesan AI "Mengetik..."
+            let aiMessage = document.createElement("div");
+            aiMessage.classList.add("chat", "ai");
+            aiMessage.textContent = "Mengetik...";
+            chatBox.appendChild(aiMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: question }] }]
+                    })
+                });
+
+                let data = await response.json();
+                let answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, AI tidak dapat menjawab saat ini.";
+
+                // Perbarui jawaban AI
+                aiMessage.textContent = answer;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                console.error("Error:", error);
+                aiMessage.textContent = "Terjadi kesalahan. Coba lagi nanti.";
+            }
+        }
+
+        function goHome() {
+            window.location.href = "index.html";
+        }
+
+        function openCamera() {
+            let video = document.getElementById("video");
+            video.style.display = "block";
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(error => {
+                    console.error("Kamera tidak dapat diakses:", error);
+                    alert("Gagal membuka kamera.");
+                });
+        }
+    </script>
+</body>
+</html>
